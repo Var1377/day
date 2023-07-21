@@ -1,12 +1,31 @@
 [package]
 name = "day"
-version = "0.1.0"
 edition = "2021"
-description = "A comprehensive CLI time management tool"
+version = "0.1.0"
 authors = ["Varun Latthe (Var1377)"]
+description = "A comprehensive CLI time management tool"
+[dependencies.clap]
+version = "4.3.17"
+features = ["cargo", "derive"]
+optional = false
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies.comfy-table]
+version = "7.0.1"
+features = ["custom_styling"]
+optional = false
 
-[dependencies]
-clap = { version = "4.3.17", features = ["cargo", "derive"] }
-inquire = { version = "0.6.2", features = ["chrono", "date", "editor", "tempfile"] }
+[dependencies.indicatif]
+version = "0.17.5"
+features = ["improved_unicode", "unicode-segmentation"]
+optional = false
+
+[dependencies.inquire]
+version = "0.6.2"
+features = ["chrono", "date", "editor", "tempfile"]
+optional = false
+
+[dependencies.tabled]
+version = "0.12.2"
+features = ["ansi-str", "ansitok", "macros", "derive", "color"]
+optional = false
+default-features = false
