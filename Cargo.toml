@@ -9,4 +9,4 @@ authors = ["Varun Latthe (Var1377)"]
 
 [dependencies]
 clap = { version = "4.3.17", features = ["cargo", "derive"] }
-edit = "0.1.4"
+inquire = { version = "0.6.2", features = ["chrono", "date", "editor", "tempfile"] }
