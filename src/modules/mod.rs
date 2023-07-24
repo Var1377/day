@@ -1,10 +1,6 @@
-mod commitments;
-mod sleep;
+pub mod commitments;
+pub mod sleep;
 
 trait Module {
 
-}
-
-pub trait Configurable {
-    fn run_config(&mut self) -> anyhow::Result<()>;
 }

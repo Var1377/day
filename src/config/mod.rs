@@ -1,21 +1,22 @@
 mod cli;
-
+mod configurator;
 pub use cli::ConfigCli;
 
-#[derive(Debug)]
-pub struct Config {
-    /// time breaking / time working
-    pub break_ratio: f64
-}
+use serde::{Serialize, Deserialize};
+use crate::modules::sleep::Sleep;
 
-impl Config {
 
-}
+pub trait Configurable {
+    fn run_configurator(&mut self) -> anyhow::Result<()>;
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            break_ratio: 0.15,
-        }
+    fn run_optional_configurator(&mut self) -> anyhow::Result<()> {
+        self.run_configurator()
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct Config {
+    #[serde(default)]
+    pub sleep: Sleep
+}
+

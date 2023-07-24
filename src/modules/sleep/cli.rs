@@ -1,15 +1,34 @@
-use crate::modules::{Configurable, sleep::SleepScheduleType};
+use super::{Sleep, SleepScheduleType, SLEEP_SCHEDULES};
+use crate::cli::Runnable;
+use crate::config::Configurable;
+use clap::Args;
 use inquire::Select;
-use super::Sleep;
 
 impl Configurable for Sleep {
-    fn run_config(&mut self) -> anyhow::Result<()> {
-        match Select::new("What is your preferred sleep schedule?", SleepScheduleType::iter_variants().collect()).prompt() {
-            Ok(sleep_schedule) => {
-                self.sleep_schedule = sleep_schedule;
-                todo!()
-            },
-            Err(_) => todo!(),
-        };
+    fn run_configurator(&mut self) -> anyhow::Result<()> {
+        let sleep_schedule = Select::new(
+            "What is your preferred sleep schedule?",
+            SLEEP_SCHEDULES.into(),
+        ).prompt()?;
+
+        self.sleep_schedule = sleep_schedule;
+        match sleep_schedule {
+            SleepScheduleType::Monophasic => self.monophasic.run_configurator()?,
+            SleepScheduleType::Biphasic => self.biphasic.run_configurator()?,
+            SleepScheduleType::Everyman => self.everyman.run_configurator()?,
+            SleepScheduleType::Uberman => self.uberman.run_configurator()?,
+            SleepScheduleType::Dymaxion => self.dymaxion.run_configurator()?,
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Args)]
+pub struct SleepArgs;
+
+impl Runnable for SleepArgs {
+    type Args = ();
+    fn run(&self, _: &(), state: &mut crate::state::State) -> anyhow::Result<()> {
+        state.config.sleep.run_configurator()
     }
 }

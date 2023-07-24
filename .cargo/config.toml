@@ -1,0 +1,3 @@
+[env]
+DAY_CONFIG_DIR = "./config/"
+DAY_DATA_DIR = "./data/"
