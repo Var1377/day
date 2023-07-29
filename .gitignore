@@ -1,3 +1,7 @@
 /target
-/config
-/data
+
+day_core/target
+
+day_cli/config
+day_cli/data
+day_cli/target

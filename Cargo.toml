@@ -1,43 +1,6 @@
-[package]
-name = "day"
-edition = "2021"
-version = "0.1.0"
-authors = ["Varun Latthe (Var1377)"]
-description = "A comprehensive CLI time management tool"
-
-[dependencies]
-anyhow = "1.0.72"
-chrono = { version = "0.4.26", default-features = false, features = ["std", "winapi"] }
-dirs = "5.0.1"
-human-panic = "1.1.5"
-once_cell = "1.18.0"
-serde = { version = "1.0.174", features = ["derive"] }
-serde_json = "1.0.103"
-sscanf = "0.4.1"
-terminal_size = "0.2.6"
-
-[dependencies.clap]
-version = "4.3.17"
-features = ["cargo", "derive"]
-optional = false
-
-[dependencies.comfy-table]
-version = "7.0.1"
-features = ["custom_styling"]
-optional = false
-
-[dependencies.indicatif]
-version = "0.17.5"
-features = ["improved_unicode", "unicode-segmentation"]
-optional = false
-
-[dependencies.inquire]
-version = "0.6.2"
-features = ["chrono", "date", "editor", "tempfile"]
-optional = false
-
-[dependencies.tabled]
-version = "0.12.2"
-features = ["ansi-str", "ansitok", "macros", "derive", "color"]
-optional = false
-default-features = false
+[workspace]
+members = [
+    "day_cli",
+    "day_core"
+]
+resolver = "2"
