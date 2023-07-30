@@ -1,10 +1,13 @@
 mod cli;
+mod fmt;
+mod configurator;
+
 pub use cli::*;
 
-use std::path::PathBuf;
-use day_core::modules::todos::{TodoState, TodoConfig, Todo};
+use crate::fs::DATA_DIR;
+use day_core::modules::todos::TodoState;
 use once_cell::sync::Lazy;
-use crate::{fs::DATA_DIR, config::Configurable};
+use std::path::PathBuf;
 
 static TODO_STATE_PATH: Lazy<PathBuf> = Lazy::new(|| {
     let mut path = DATA_DIR.clone();
@@ -14,7 +17,10 @@ static TODO_STATE_PATH: Lazy<PathBuf> = Lazy::new(|| {
 
 #[extension_trait]
 pub impl TodoStateLoad for TodoState {
-    fn load() -> anyhow::Result<Self> where Self: Sized {
+    fn load() -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         let contents = crate::fs::file_contents(&TODO_STATE_PATH)?;
         if let Some(contents) = contents {
             Ok(serde_json::from_str(&contents)?)
@@ -23,39 +29,10 @@ pub impl TodoStateLoad for TodoState {
         }
     }
 
-    fn save(&self) -> anyhow::Result<()> {
+    fn save(&mut self) -> anyhow::Result<()> {
+        // Sort todos by id descending, this is the same as ordering by creation date
+        self.normalize();
         std::fs::write(&*TODO_STATE_PATH, serde_json::to_string_pretty(self)?)?;
-        Ok(())
-    }
-}
-
-impl Configurable for TodoConfig {
-    fn run_configurator(&mut self) -> anyhow::Result<()> {
-        Ok(())
-    }
-}
-
-impl Configurable for Todo {
-    fn run_configurator(&mut self) -> anyhow::Result<()> {
-        self.name = inquire::Text::new("Todo Name:")
-            .with_default(&self.name)
-            .prompt()?;
-
-        self.description = inquire::Text::new("Todo Description:")
-            .with_default(&self.description)
-            .prompt()?;
-
-        if inquire::Confirm::new("Does this todo have a deadline?")
-            .with_default(false)
-            .prompt()?
-        {
-            let mut date_picker = inquire::DateSelect::new("Todo Deadline:");
-            if let Some(deadline) = &self.deadline {
-                date_picker = date_picker.with_default(*deadline);
-            }
-            self.deadline = Some(date_picker.prompt()?);
-        }
-        
         Ok(())
     }
 }

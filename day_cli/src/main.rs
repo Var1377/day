@@ -7,6 +7,7 @@ mod state;
 mod modules;
 mod cli;
 mod fs;
+mod table;
 
 use clap::Parser;
 use human_panic::setup_panic;

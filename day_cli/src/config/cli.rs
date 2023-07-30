@@ -23,10 +23,14 @@ pub enum SubCommand {
     Sleep(SleepArgs),
     /// Open the config file in your editor
     #[clap(visible_aliases = &["e"])]
-    Edit,
+    Editor,
     /// Print the path to the config file
     #[clap(visible_aliases = &["p"])]
     Path,
+
+    /// Reset the config file to defaults
+    #[clap(visible_aliases = &["r"])]
+    Reset,
 }
 
 impl Runnable for ConfigCli {
@@ -38,7 +42,7 @@ impl Runnable for ConfigCli {
                     sleep_args.run(&(), state)?;
                     true
                 }
-                SubCommand::Edit => {
+                SubCommand::Editor => {
                     state.config.run_editor(&format!(
                         "Starting editor at {}",
                         CONFIG_PATH.display()
@@ -48,6 +52,15 @@ impl Runnable for ConfigCli {
                 SubCommand::Path => {
                     println!("{}", CONFIG_PATH.display());
                     false
+                }
+                SubCommand::Reset => {
+                    if inquire::Confirm::new("Are you sure you want to reset your configuration to defaults?").with_default(false).prompt()? {
+                        state.config.run_optional_configurator()?;
+                        println!("Configuration reset to defaults");
+                        true
+                    } else {
+                        false
+                    }
                 }
             },
             None => {

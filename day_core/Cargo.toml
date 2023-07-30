@@ -11,3 +11,4 @@ enum-iterator = "1.4.1"
 serde = { version = "1.0.174", features = ["derive"] }
 serde-inline-default = "0.1.1"
 sscanf = "0.4.1"
+uuid = { version = "1.4.1", features = ["v7", "serde"] }

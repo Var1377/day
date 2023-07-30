@@ -1,6 +1,6 @@
-use crate::{cli::{Runnable, Cli}, fs::JsonEditable, config::Configurable};
+use crate::{cli::{Runnable, Cli}, fs::JsonEditable, config::Configurable, table::TableFmt};
 use clap::{Args, Subcommand};
-use day_core::modules::todos::Todo;
+use day_core::modules::todos::{Todo, CompletedTodo};
 
 use super::TODO_STATE_PATH;
 
@@ -25,7 +25,7 @@ pub enum TodoSubcommand {
     /// Remove a todo
     Remove(TodoRemoveArgs),
     /// Manage your todo list in your editor
-    Edit,
+    Editor,
 }
 
 #[derive(Debug, Args)]
@@ -37,11 +37,11 @@ pub struct TodoListArgs {
     /// list all todos
     pub all: bool,
     #[clap(short, long)]
-    /// list n todos
-    pub num: Option<usize>,
-    #[clap(short, long)]
     /// list only done todos
     pub done: bool,
+    #[clap(short, long)]
+    /// list n todos
+    pub num: Option<usize>,
 }
 
 #[derive(Debug, Args)]
@@ -58,12 +58,21 @@ impl Runnable for TodoArgs {
             TodoSubcommand::Add(_) => {
                 let mut default = Todo::default();
                 default.run_configurator()?;
-                println!("{} added to todo list", &default.name);
+                println!("\"{}\" added to todo list", &default.name);
                 state.todo.todos.push(default);
             }
-            TodoSubcommand::List(_) => {
-                println!("List");
-                unimplemented!();
+            TodoSubcommand::List(TodoListArgs { all, done, num }) => {
+                let n = if *all {
+                    usize::MAX
+                } else {
+                    num.unwrap_or(5)
+                };
+
+                if *done {
+                    CompletedTodo::print_iter(state.todo.completed.iter().take(n).cloned());
+                } else {
+                    Todo::print_iter(state.todo.todos.iter().take(n).cloned());
+                }
             }
             TodoSubcommand::Done(_) => {
                 println!("Done");
@@ -73,7 +82,7 @@ impl Runnable for TodoArgs {
                 println!("Remove");
                 unimplemented!();
             }
-            TodoSubcommand::Edit => {
+            TodoSubcommand::Editor => {
                 state.todo.run_editor(&format!("Starting editor at {}", TODO_STATE_PATH.display()))?;
             }
         }
