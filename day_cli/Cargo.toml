@@ -1,5 +1,5 @@
 [package]
-name = "day_cli"
+name = "day"
 edition = "2021"
 version = "0.1.0"
 authors = ["Varun Latthe (Var1377)"]

@@ -1,9 +1,11 @@
 use serde::{Serialize, Deserialize};
-use crate::modules::sleep::Sleep;
+use crate::modules::{sleep::SleepConfig, todos::TodoConfig};
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Config {
     #[serde(default)]
-    pub sleep: Sleep
+    pub sleep: SleepConfig,
+    #[serde(default)]
+    pub todo: TodoConfig,
 }
 

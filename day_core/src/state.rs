@@ -1,7 +1,7 @@
-use crate::config::Config;
+use crate::{config::Config, modules::todos::TodoState};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct State {
     pub config: Config,
-    pub todo: TodoList,
+    pub todo: TodoState,
 }

@@ -21,6 +21,12 @@ pub struct HourMinute(
     pub u32,
 );
 
+impl From<u32> for HourMinute {
+    fn from(t: u32) -> Self {
+        Self(t / 60, t % 60)
+    }
+}
+
 macro_rules! impls {
     ($($type:ty),*) => {
         $(
@@ -47,33 +53,6 @@ macro_rules! impls {
                     f.write_fmt(format_args!("{:02}:{:02}", self.0, self.1))
                 }
             }
-
-            // impl $type {
-            //     pub fn prompt(msg: &str) -> anyhow::Result<Self> {
-            //         let time = inquire::Text::new(&format!("{msg} (hh:mm)"))
-            //             .with_validator(|s: &str| match s.parse::<TimeOfDay>() {
-            //                 Ok(_) => Ok(inquire::validator::Validation::Valid),
-            //                 Err(e) => Ok(inquire::validator::Validation::Invalid(e.into())),
-            //             })
-            //             .prompt()?;
-            
-            //         // unwrap is safe because of the validator
-            //         Ok(time.parse().unwrap())
-            //     }
-            
-            //     pub fn prompt_with_default(msg: &str, default: Self) -> anyhow::Result<Self> {
-            //         let time = inquire::Text::new(&format!("{msg} (hh:mm)"))
-            //             .with_default(&default.to_string())
-            //             .with_validator(|s: &str| match s.parse::<TimeOfDay>() {
-            //                 Ok(_) => Ok(inquire::validator::Validation::Valid),
-            //                 Err(e) => Ok(inquire::validator::Validation::Invalid(e.into())),
-            //             })
-            //             .prompt()?;
-            
-            //         // unwrap is safe because of the validator
-            //         Ok(time.parse().unwrap())
-            //     }
-            // }
         )*
     };
 }

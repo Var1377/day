@@ -1,22 +1,24 @@
+use std::fmt::Display;
 use crate::time::HourMinute;
-use super::SleepSchedule;
-use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+
+#[serde_inline_default]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct Monophasic {
-    #[serde(default)]
-    pub time_before_sleep_max: HourMinute,
-    #[serde(default)]
-    pub time_before_sleep_min: HourMinute,
+    #[serde_inline_default(5)]
+    pub cycles: u8,
 }
 
 impl Default for Monophasic {
     fn default() -> Self {
         Self {
-            time_before_sleep_max: HourMinute(1, 0),
-            time_before_sleep_min: HourMinute(0, 30),
+            cycles: 5,
         }
     }
 }
 
-impl SleepSchedule for Monophasic {}
+impl Display for Monophasic {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "🌚 Monophasic: {time}", time = HourMinute::from(self.cycles as u32))
+    }
+}

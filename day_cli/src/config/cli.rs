@@ -2,8 +2,8 @@ use clap::{Args, Subcommand};
 
 use crate::{
     cli::{Cli, Runnable},
-    fs::{file_contents, CONFIG_PATH},
-    modules::sleep::cli::SleepArgs,
+    fs::{file_contents, CONFIG_PATH, JsonEditable},
+    modules::sleep::SleepArgs,
 };
 
 use day_core::{config::Config, state::State};
@@ -19,56 +19,56 @@ pub struct ConfigCli {
 #[derive(Subcommand, Debug)]
 pub enum SubCommand {
     #[clap(visible_aliases = &["s"])]
-    /// configure sleep settings
+    /// Configure sleep settings
     Sleep(SleepArgs),
-    /// open the config file in your editor
+    /// Open the config file in your editor
     #[clap(visible_aliases = &["e"])]
     Edit,
-    /// print the path to the config file
+    /// Print the path to the config file
     #[clap(visible_aliases = &["p"])]
-    Path
+    Path,
 }
 
 impl Runnable for ConfigCli {
     type Args = Cli;
     fn run(&self, _cli: &Cli, state: &mut State) -> anyhow::Result<()> {
-        match &self.subcmd {
+        let save = match &self.subcmd {
             Some(subcmd) => match subcmd {
-                SubCommand::Sleep(sleep_args) => sleep_args.run(&(), state)?,
+                SubCommand::Sleep(sleep_args) => {
+                    sleep_args.run(&(), state)?;
+                    true
+                }
                 SubCommand::Edit => {
-                    let new_config = inquire::Editor::new(&format!(
+                    state.config.run_editor(&format!(
                         "Starting editor at {}",
                         CONFIG_PATH.display()
-                    ))
-                    .with_predefined_text(&serde_json::to_string_pretty(&state.config)?)
-                    .with_validator(|contents: &str| {
-                        match serde_json::from_str::<Config>(&contents) {
-                            Ok(_) => Ok(inquire::validator::Validation::Valid),
-                            Err(e) => Ok(inquire::validator::Validation::Invalid(e.into())),
-                        }
-                    })
-                    .with_file_extension("json")
-                    .prompt()?;
-
-                    state.config = serde_json::from_str(&new_config)?;
-                },
+                    ))?;
+                    true
+                }
                 SubCommand::Path => {
-                    println!("Configuration File: {}", CONFIG_PATH.display());
+                    println!("{}", CONFIG_PATH.display());
+                    false
                 }
             },
             None => {
                 state.config.run_optional_configurator()?;
+                true
             }
         };
-
-        state.config.save()?;
+        if save {
+            state.config.save()?;
+            println!("Configuration saved to {}", CONFIG_PATH.display());
+        }
         Ok(())
     }
 }
 
 #[extension_trait]
 pub impl ConfigLoad for Config {
-    fn load() -> anyhow::Result<Self> where Self: Sized {
+    fn load() -> anyhow::Result<Self>
+    where
+        Self: Sized,
+    {
         match file_contents(&CONFIG_PATH)? {
             Some(contents) => {
                 let config: Config = serde_json::from_str(&contents)?;
@@ -80,13 +80,19 @@ pub impl ConfigLoad for Config {
                     .prompt()?
                 {
                     let mut config = Config::default();
-                    config.run_configurator()?;
-                    config.save()?;
                     println!(
-                        "Config file created at {}, running configurator",
+                        "Config file created at {} with defaults",
                         CONFIG_PATH.display()
                     );
-                    match inquire::Confirm::new("Would you like to continue execution?")
+                    match inquire::Confirm::new("Would you like to configure your settings?")
+                        .with_default(true)
+                        .prompt()?
+                    {
+                        true => config.run_configurator()?,
+                        false => (),
+                    };
+                    config.save()?;
+                    match inquire::Confirm::new("Would you like to continue with your command?")
                         .with_default(true)
                         .prompt()?
                     {

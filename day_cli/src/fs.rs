@@ -1,5 +1,6 @@
 use dirs::{config_dir, data_dir};
 use once_cell::sync::Lazy;
+use serde::de::DeserializeOwned;
 use std::env;
 use std::path::Path;
 use std::{collections::HashMap, path::PathBuf};
@@ -43,5 +44,30 @@ pub fn file_contents(path: &Path) -> std::io::Result<Option<String>> {
         Ok(Some(std::fs::read_to_string(path)?))
     } else {
         Ok(None)
+    }
+}
+
+pub trait JsonEditable {
+    fn run_editor(&mut self, message: &str) -> anyhow::Result<()>;
+}
+
+impl<T> JsonEditable for T
+where
+    T: DeserializeOwned + serde::Serialize,
+{
+    fn run_editor(&mut self, message: &str) -> anyhow::Result<()> {
+        let new_config = inquire::Editor::new(message)
+        .with_predefined_text(&serde_json::to_string_pretty(&self)?)
+        .with_validator(|contents: &str| {
+            match serde_json::from_str::<T>(contents) {
+                Ok(_) => Ok(inquire::validator::Validation::Valid),
+                Err(e) => Ok(inquire::validator::Validation::Invalid(e.into())),
+            }
+        })
+        .with_file_extension("json")
+        .prompt()?;
+
+        *self = serde_json::from_str(&new_config)?;
+        Ok(())
     }
 }

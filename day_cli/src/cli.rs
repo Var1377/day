@@ -1,6 +1,15 @@
-use crate::{config::ConfigCli, state::StateLoad};
+use std::fmt::Display;
+
+use crate::{
+    config::{ConfigCli, Configurable},
+    state::StateLoad, modules::todo::TodoArgs,
+};
 use clap::{Parser, Subcommand};
-use day_core::{time::{HourMinute, TimeOfDay}, state::State};
+use day_core::{
+    state::State,
+    weekly::{Day, Weekly},
+};
+use enum_iterator::all;
 
 pub trait Runnable {
     type Args;
@@ -13,7 +22,7 @@ pub trait Runnable {
     version = "0.1.0",
     author = "Varun Latthe (Var1337)",
     about,
-    after_help = "Day.rs is a command line tool to help you maximise efficiency around an already packed day. To see what it can do, run `day config`"
+    after_help = "Day.rs is a command line tool to help you maximise efficiency around your schedule. To see what it can do, run \"day config\""
 )]
 pub struct Cli {
     #[clap(subcommand)]
@@ -25,8 +34,12 @@ impl Cli {
         let mut state = State::load()?;
 
         match &self.subcmd {
-            SubCommand::Config(config_args) => config_args.run(&self, &mut state),
-        }
+            SubCommand::Config(config_args) => config_args.run(self, &mut state)?,
+            SubCommand::Todo(todo_args) => todo_args.run(self, &mut state)?,
+        };
+
+        state.save()?;
+        Ok(())
     }
 }
 
@@ -35,67 +48,60 @@ enum SubCommand {
     #[clap(visible_aliases = &["cfg", "c"])]
     /// Show or change configuration values
     Config(ConfigCli),
+    #[clap(visible_aliases = &["t"])]
+    /// Manage your todo list
+    Todo(TodoArgs),
 }
 
-#[extension_trait::extension_trait]
-pub impl HourMinuteCliExt for HourMinute {
-    fn prompt_default_now(msg: &str) -> anyhow::Result<Self>
-    where
-        Self: Sized,
-    {
-        Self::prompt_with_default(msg, Self::default())
-    }
+#[derive(Debug)]
+struct WeeklyDisplay<T : Display>(Day, T);
 
-    fn prompt(msg: &str) -> anyhow::Result<Self> where Self: Sized {
-        let time = inquire::Text::new(&format!("{msg} (hh:mm)"))
-            .with_validator(|s: &str| match s.parse::<HourMinute>() {
-                Ok(_) => Ok(inquire::validator::Validation::Valid),
-                Err(e) => Ok(inquire::validator::Validation::Invalid(e.into())),
-            })
-            .prompt()?;
-
-        // unwrap is safe because of the validator
-        Ok(time.parse().unwrap())
-    }
-
-    fn prompt_with_default(msg: &str, default: Self) -> anyhow::Result<Self> where Self: Sized {
-        let time = inquire::Text::new(&format!("{msg} (hh:mm)"))
-            .with_default(&default.to_string())
-            .with_validator(|s: &str| match s.parse::<HourMinute>() {
-                Ok(_) => Ok(inquire::validator::Validation::Valid),
-                Err(e) => Ok(inquire::validator::Validation::Invalid(e.into())),
-            })
-            .prompt()?;
-
-        // unwrap is safe because of the validator
-        Ok(time.parse().unwrap())
+impl<T> Display for WeeklyDisplay<T> where T : Display {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{}: {}", self.0, self.1))
     }
 }
 
-#[extension_trait::extension_trait]
-pub impl TimeOfDayCliExt for TimeOfDay {
-    fn prompt(msg: &str) -> anyhow::Result<Self> where Self: Sized {
-        let time = inquire::Text::new(&format!("{msg} (hh:mm)"))
-            .with_validator(|s: &str| match s.parse::<TimeOfDay>() {
-                Ok(_) => Ok(inquire::validator::Validation::Valid),
-                Err(e) => Ok(inquire::validator::Validation::Invalid(e.into())),
-            })
-            .prompt()?;
 
-        // unwrap is safe because of the validator
-        Ok(time.parse().unwrap())
-    }
+impl<T> Configurable for Weekly<T>
+where
+    T: Configurable + Clone + Display,
+{
+    fn run_configurator(&mut self) -> anyhow::Result<()> {
+        let selection = inquire::MultiSelect::new(
+            "Which days would you like to configure?",
+            all::<Day>().map(|day| WeeklyDisplay(day, self.get(day))).collect(),
+        )
+        .prompt()?.into_iter().map(|day| day.0).collect::<Vec<_>>();
 
-    fn prompt_with_default(msg: &str, default: Self) -> anyhow::Result<Self> where Self: Sized {
-        let time = inquire::Text::new(&format!("{msg} (hh:mm)"))
-            .with_default(&default.to_string())
-            .with_validator(|s: &str| match s.parse::<TimeOfDay>() {
-                Ok(_) => Ok(inquire::validator::Validation::Valid),
-                Err(e) => Ok(inquire::validator::Validation::Invalid(e.into())),
-            })
-            .prompt()?;
+        if let Some(day) = selection.first() {
+            let day = *day;
+            match day {
+                Day::Monday => self.monday.run_configurator()?,
+                Day::Tuesday => self.tuesday.run_configurator()?,
+                Day::Wednesday => self.wednesday.run_configurator()?,
+                Day::Thursday => self.thursday.run_configurator()?,
+                Day::Friday => self.friday.run_configurator()?,
+                Day::Saturday => self.saturday.run_configurator()?,
+                Day::Sunday => self.sunday.run_configurator()?,
+            }
+            // assign the value of the first day to all the other days
+            for days in selection.windows(2) {
+                let before = days[0];
+                let after = days[1];
 
-        // unwrap is safe because of the validator
-        Ok(time.parse().unwrap())
+                match after {
+                    Day::Monday => self.monday = self.get(before).clone(),
+                    Day::Tuesday => self.tuesday = self.get(before).clone(),
+                    Day::Wednesday => self.wednesday = self.get(before).clone(),
+                    Day::Thursday => self.thursday = self.get(before).clone(),
+                    Day::Friday => self.friday = self.get(before).clone(),
+                    Day::Saturday => self.saturday = self.get(before).clone(),
+                    Day::Sunday => self.sunday = self.get(before).clone(),
+                }
+            }
+        };
+
+        Ok(())
     }
 }
