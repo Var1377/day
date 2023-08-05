@@ -53,6 +53,12 @@ macro_rules! impls {
                     f.write_fmt(format_args!("{:02}:{:02}", self.0, self.1))
                 }
             }
+
+            impl $type {
+                pub fn to_minutes(&self) -> u32 {
+                    self.0 * 60 + self.1
+                }
+            }
         )*
     };
 }

@@ -6,3 +6,5 @@ pub mod modules;
 pub mod config;
 pub mod state;
 pub mod weekly;
+pub mod scheduling;
+pub mod event;

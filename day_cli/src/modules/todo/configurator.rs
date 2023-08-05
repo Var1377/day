@@ -1,5 +1,5 @@
 use chrono::Local;
-use day_core::{modules::todos::{TodoConfig, Todo, Deadline}, time::{TimeOfDay, HourMinute}};
+use day_core::{modules::{todos::TodoConfig, task::{Task, Deadline}}, time::{TimeOfDay, HourMinute}};
 
 use crate::config::Configurable;
 
@@ -10,7 +10,7 @@ impl Configurable for TodoConfig {
     }
 }
 
-impl Configurable for Todo {
+impl Configurable for Task {
     fn run_configurator(&mut self) -> anyhow::Result<()> {
         self.name = inquire::Text::new("Todo Name:")
             .with_default(&self.name)

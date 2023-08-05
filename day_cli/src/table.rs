@@ -1,4 +1,5 @@
-use comfy_table::{presets::UTF8_FULL, ContentArrangement, Row, Table as ComfyTable};
+use comfy_table::{presets::UTF8_FULL, ContentArrangement, Row, Table as ComfyTable, Cell, Color};
+use day_core::time::HourMinute;
 
 pub trait TableFmt
 where
@@ -39,5 +40,18 @@ where
 
     fn print_iter(iter: impl IntoIterator<Item = Self>) {
         println!("{}", Self::iter_table(iter));
+    }
+}
+
+#[extension_trait]
+pub impl DurationTableFmt for HourMinute {
+    fn to_cell_duration(&self) -> Cell {
+        let mut base = Cell::new(self.to_string());
+        match self.to_minutes() {
+            0..=30 => base = base.fg(Color::Green),
+            31..=60 => base = base.fg(Color::Yellow),
+            _ => base = base.fg(Color::Red),
+        }
+        base
     }
 }

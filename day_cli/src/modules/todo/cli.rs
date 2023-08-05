@@ -1,6 +1,7 @@
-use crate::{cli::{Runnable, Cli}, fs::JsonEditable, config::Configurable, table::TableFmt};
+use crate::{cli::{Runnable, Cli}, fs::JsonEditable};
+use crate::{table::TableFmt, config::Configurable};
 use clap::{Args, Subcommand};
-use day_core::modules::todos::{Todo, CompletedTodo};
+use day_core::modules::task::{Task, CompletedTask};
 
 use super::TODO_STATE_PATH;
 
@@ -56,7 +57,7 @@ impl Runnable for TodoArgs {
     fn run(&self, _args: &Self::Args, state: &mut day_core::state::State) -> anyhow::Result<()> {
         match &self.subcommand {
             TodoSubcommand::Add(_) => {
-                let mut default = Todo::default();
+                let mut default = Task::default();
                 default.run_configurator()?;
                 println!("\"{}\" added to todo list", &default.name);
                 state.todo.todos.push(default);
@@ -69,9 +70,9 @@ impl Runnable for TodoArgs {
                 };
 
                 if *done {
-                    CompletedTodo::print_iter(state.todo.completed.iter().take(n).cloned());
+                    CompletedTask::print_iter(state.todo.completed.iter().take(n).cloned());
                 } else {
-                    Todo::print_iter(state.todo.todos.iter().take(n).cloned());
+                    Task::print_iter(state.todo.todos.iter().take(n).cloned());
                 }
             }
             TodoSubcommand::Done(_) => {

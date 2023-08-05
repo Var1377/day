@@ -1,11 +1,11 @@
 use chrono::Local;
 use comfy_table::{Row, Cell, Color};
-use day_core::modules::todos::{Todo, CompletedTodo, Deadline};
+use day_core::modules::task::{Task, CompletedTask, Deadline};
 
-use crate::table::TableFmt;
+use crate::table::{TableFmt, DurationTableFmt};
 
 
-impl TableFmt for Todo {
+impl TableFmt for Task {
     fn headers() -> Vec<&'static str> {
         ["Name", "Notes", "Duration", "Deadline", "Urgency"].into()
     }
@@ -14,26 +14,26 @@ impl TableFmt for Todo {
         vec![
             self.name.into(),
             self.notes.into(),
-            self.duration.to_string().into(),
+            self.duration.to_cell_duration(),
             self.deadline
                 .as_ref()
                 .map(|e| e.to_cell())
-                .unwrap_or(Cell::new("None")),
+                .unwrap_or(Cell::new("")),
             self.urgency.to_cell(),
         ]
         .into()
     }
 }
 
-impl TableFmt for CompletedTodo {
+impl TableFmt for CompletedTask {
     fn headers() -> Vec<&'static str> {
-        let mut base = Todo::headers();
+        let mut base = Task::headers();
         base.push("Completed At");
         base
     }
 
     fn row(self) -> Row {
-        let mut base = self.todo.row();
+        let mut base = self.task.row();
         base.add_cell(self.completed_at.to_string().into());
         base
     }
@@ -60,7 +60,6 @@ pub impl UrgencyTableFmt for u8 {
 }
 
 #[extension_trait]
-/// Formats a deadline for display in a table. Deadlines that have passed are red, deadlines that are within 48 hours are yellow, and deadlines that are more than 48 hours away are green.
 pub impl DeadlineTableFmt for Deadline {
     fn to_cell(&self) -> Cell {
         let mut base = Cell::new(self.to_string());
@@ -87,3 +86,4 @@ pub impl DeadlineTableFmt for Deadline {
         base
     }
 }
+
