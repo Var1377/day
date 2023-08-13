@@ -2,7 +2,8 @@ use chrono::Local;
 use comfy_table::{Row, Cell, Color};
 use day_core::modules::task::{Task, CompletedTask, Deadline};
 
-use crate::table::{TableFmt, DurationTableFmt};
+use crate::table::TableFmt;
+
 
 
 impl TableFmt for Task {
@@ -11,17 +12,18 @@ impl TableFmt for Task {
     }
 
     fn row(self) -> Row {
-        vec![
-            self.name.into(),
-            self.notes.into(),
-            self.duration.to_cell_duration(),
+        let mut inner = self.event.row();
+        for cell in [
             self.deadline
                 .as_ref()
                 .map(|e| e.to_cell())
                 .unwrap_or(Cell::new("")),
             self.urgency.to_cell(),
-        ]
-        .into()
+        ] {
+            inner.add_cell(cell);
+        }
+
+        inner
     }
 }
 

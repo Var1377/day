@@ -59,7 +59,7 @@ impl Runnable for TodoArgs {
             TodoSubcommand::Add(_) => {
                 let mut default = Task::default();
                 default.run_configurator()?;
-                println!("\"{}\" added to todo list", &default.name);
+                println!("\"{}\" added to todo list", &default.event.name);
                 state.todo.todos.push(default);
             }
             TodoSubcommand::List(TodoListArgs { all, done, num }) => {

@@ -1,8 +1,14 @@
 use chrono::Local;
-use day_core::{modules::{todos::TodoConfig, task::{Task, Deadline}}, time::{TimeOfDay, HourMinute}};
+use day_core::{
+    event::Event,
+    modules::{
+        task::{Deadline, Task},
+        todos::TodoConfig,
+    },
+    time::{HourMinute, TimeOfDay},
+};
 
 use crate::config::Configurable;
-
 
 impl Configurable for TodoConfig {
     fn run_configurator(&mut self) -> anyhow::Result<()> {
@@ -10,23 +16,36 @@ impl Configurable for TodoConfig {
     }
 }
 
-impl Configurable for Task {
+impl Configurable for Event {
     fn run_configurator(&mut self) -> anyhow::Result<()> {
-        self.name = inquire::Text::new("Todo Name:")
+        self.name = inquire::Text::new("Name:")
             .with_default(&self.name)
             .prompt()?;
 
-        let mut desc = inquire::Text::new("Todo Description:");
-
-        self.urgency = inquire::CustomType::<u8>::new("Urgency from 0 to 7: ")
-            .with_default(self.urgency)
-            .prompt()?;
+        let mut desc = inquire::Text::new("Description:");
 
         if !&self.notes.is_empty() {
             desc = desc.with_default(&self.notes);
         }
 
         self.notes = desc.prompt()?;
+
+        self.duration = inquire::CustomType::<HourMinute>::new("Estimated Duration: ")
+            .with_default(self.duration)
+            .prompt()?
+            .into();
+
+        Ok(())
+    }
+}
+
+impl Configurable for Task {
+    fn run_configurator(&mut self) -> anyhow::Result<()> {
+        self.event.run_configurator()?;
+
+        self.urgency = inquire::CustomType::<u8>::new("Urgency from 0 to 7: ")
+            .with_default(self.urgency)
+            .prompt()?;
 
         if inquire::Confirm::new("Does this todo have a deadline?")
             .with_default(false)
@@ -64,12 +83,6 @@ impl Configurable for Task {
                 self.deadline = Some(Deadline::Date(chosen_date.unwrap()));
             }
         }
-
-        self.duration = inquire::CustomType::<HourMinute>::new("Estimated Duration: ")
-            .with_default(self.duration)
-            .prompt()?
-            .into();
-
         Ok(())
     }
 }
