@@ -1,10 +1,10 @@
-use crate::event::Event;
+use crate::event::InflexibleEvent;
 use std::{fmt::Display, str::FromStr};
 use enum_iterator::Sequence;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Commitment {
-    Event(Event),
+    Event(InflexibleEvent),
     Ical(String),
 }
 
@@ -28,7 +28,7 @@ impl From<CommitmentType> for Commitment {
     fn from(commitment_type: CommitmentType) -> Self {
         match commitment_type {
             CommitmentType::Ical => Commitment::Ical(String::default()),
-            CommitmentType::Event => Commitment::Event(Event::default()),
+            CommitmentType::Event => Commitment::Event(InflexibleEvent::default()),
         }
     }
 }
@@ -47,6 +47,6 @@ impl FromStr for CommitmentType {
 
 impl Default for Commitment {
     fn default() -> Self {
-        Self::Event(Event::default())
+        Self::Event(InflexibleEvent::default())
     }
 }

@@ -1,7 +1,3 @@
-use std::cmp::Ordering;
-
-use chrono::{DateTime, Local};
-
 use super::task::{Task, CompletedTask};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

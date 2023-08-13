@@ -1,24 +1,18 @@
 use std::{fmt::Display, cmp::Ordering};
 
 use chrono::{NaiveDate, DateTime, Local};
-use uuid::Uuid;
 
-use crate::time::HourMinute;
+use crate::event::Event;
 
 #[serde_inline_default]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct Task {
-    #[serde(default = "Uuid::now_v7")]
-    pub id: Uuid,
     #[serde(default)]
     pub urgency: u8,
     #[serde(default)]
     pub deadline: Option<Deadline>,
-    pub name: String,
-    #[serde(default)]
-    pub notes: String,
-    #[serde_inline_default(HourMinute(0, 30))]
-    pub duration: HourMinute,
+    #[serde(default, flatten)]
+    pub event: Event,
 }
 
 impl PartialOrd for Task {
@@ -29,7 +23,7 @@ impl PartialOrd for Task {
 
 impl Ord for Task {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.urgency.cmp(&other.urgency).reverse().then(deadline_cmp(&self.deadline, &other.deadline).reverse()).then(self.id.cmp(&other.id))
+        self.urgency.cmp(&other.urgency).reverse().then(deadline_cmp(&self.deadline, &other.deadline).reverse()).then(self.event.id.cmp(&other.event.id))
     }
 }
 
@@ -87,12 +81,9 @@ impl Deadline {
 impl Default for Task {
     fn default() -> Self {
         Self {
-            name: "New Todo".to_string(),
-            notes: String::new(),
             deadline: None,
-            id: Uuid::now_v7(),
             urgency: 0,
-            duration: HourMinute(0, 30),
+            event: Default::default()
         }
     }
 }

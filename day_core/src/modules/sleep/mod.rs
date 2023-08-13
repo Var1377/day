@@ -8,6 +8,7 @@ use crate::weekly::Weekly;
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct SleepConfig {
+    #[serde(default)]
     pub schedule: Weekly<SleepSchedule>,
 }
 
@@ -51,7 +52,7 @@ impl Default for SleepSchedule {
 impl Display for SleepSchedule {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SleepSchedule::Monophasic(m) => write!(f, "{m}"),
+            SleepSchedule::Monophasic(_m) => write!(f, "🌚 Monophasic"),
             SleepSchedule::Biphasic => write!(f, "🌞 Biphasic"),
             SleepSchedule::Everyman => write!(f, "🤺 Everyman"),
             SleepSchedule::Uberman => write!(f, "🦾 Uberman"),
