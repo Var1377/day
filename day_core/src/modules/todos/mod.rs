@@ -17,4 +17,3 @@ impl TodoState {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct TodoConfig;
-

@@ -1,40 +1,16 @@
 use chrono::Local;
 use day_core::{
-    event::Event,
     modules::{
         task::{Deadline, Task},
         todos::TodoConfig,
     },
-    time::{HourMinute, TimeOfDay},
+    time::TimeOfDay, now,
 };
 
 use crate::config::Configurable;
 
 impl Configurable for TodoConfig {
     fn run_configurator(&mut self) -> anyhow::Result<()> {
-        Ok(())
-    }
-}
-
-impl Configurable for Event {
-    fn run_configurator(&mut self) -> anyhow::Result<()> {
-        self.name = inquire::Text::new("Name:")
-            .with_default(&self.name)
-            .prompt()?;
-
-        let mut desc = inquire::Text::new("Description:");
-
-        if !&self.notes.is_empty() {
-            desc = desc.with_default(&self.notes);
-        }
-
-        self.notes = desc.prompt()?;
-
-        self.duration = inquire::CustomType::<HourMinute>::new("Estimated Duration: ")
-            .with_default(self.duration)
-            .prompt()?
-            .into();
-
         Ok(())
     }
 }
@@ -48,16 +24,18 @@ impl Configurable for Task {
             .prompt()?;
 
         if inquire::Confirm::new("Does this todo have a deadline?")
-            .with_default(false)
+            .with_default(self.deadline.is_some())
             .prompt()?
         {
-            let mut date_picker = inquire::DateSelect::new("Todo Deadline:");
+            let mut date_picker = inquire::DateSelect::new("Deadline:").with_default(
+                self.deadline.as_ref().map(|e| e.get_naive_date()).unwrap_or(now().date_naive())
+            );
             if let Some(date) = &self.deadline {
                 date_picker = date_picker.with_default(date.get_naive_date());
             }
             let chosen_date = Some(date_picker.prompt()?);
             if inquire::Confirm::new("Does this deadline have a specific time?")
-                .with_default(false)
+                .with_default(self.deadline.as_ref().map(|e| e.has_time()).unwrap_or(false))
                 .prompt()?
             {
                 let time = inquire::CustomType::<TimeOfDay>::new("Deadline time: ")

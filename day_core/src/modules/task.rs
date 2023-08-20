@@ -42,6 +42,15 @@ pub enum Deadline {
     DateTime(DateTime<Local>),
 }
 
+impl Deadline {
+    pub fn has_time(&self) -> bool {
+        match self {
+            Self::Date(_) => false,
+            Self::DateTime(_) => true,
+        }
+    }
+}
+
 impl Display for Deadline {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

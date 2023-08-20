@@ -1,7 +1,10 @@
-use crate::{cli::{Runnable, Cli}, fs::JsonEditable};
-use crate::{table::TableFmt, config::Configurable};
+use crate::{
+    cli::{Cli, Runnable},
+    fs::JsonEditable,
+};
+use crate::{config::Configurable, table::TableFmt};
 use clap::{Args, Subcommand};
-use day_core::modules::task::{Task, CompletedTask};
+use day_core::modules::task::{CompletedTask, Task};
 
 use super::TODO_STATE_PATH;
 
@@ -22,6 +25,9 @@ pub enum TodoSubcommand {
     #[clap(visible_aliases = &["d"])]
     /// Mark a todo as done
     Done(TodoDoneArgs),
+    #[clap(visible_aliases = &["e"])]
+    /// Edit a todo
+    Edit(TodoEditArgs),
     #[clap(visible_aliases = &["r"])]
     /// Remove a todo
     Remove(TodoRemoveArgs),
@@ -51,6 +57,9 @@ pub struct TodoDoneArgs;
 #[derive(Debug, Args)]
 pub struct TodoRemoveArgs;
 
+#[derive(Debug, Args)]
+pub struct TodoEditArgs;
+
 impl Runnable for TodoArgs {
     type Args = Cli;
 
@@ -59,15 +68,11 @@ impl Runnable for TodoArgs {
             TodoSubcommand::Add(_) => {
                 let mut default = Task::default();
                 default.run_configurator()?;
-                println!("\"{}\" added to todo list", &default.event.name);
+                println!("\"{}\" added to todo list", &default.event.title);
                 state.todo.todos.push(default);
             }
             TodoSubcommand::List(TodoListArgs { all, done, num }) => {
-                let n = if *all {
-                    usize::MAX
-                } else {
-                    num.unwrap_or(5)
-                };
+                let n = if *all { usize::MAX } else { num.unwrap_or(5) };
 
                 if *done {
                     CompletedTask::print_iter(state.todo.completed.iter().take(n).cloned());
@@ -84,7 +89,25 @@ impl Runnable for TodoArgs {
                 unimplemented!();
             }
             TodoSubcommand::Editor => {
-                state.todo.run_editor(&format!("Starting editor at {}", TODO_STATE_PATH.display()))?;
+                state
+                    .todo
+                    .run_editor(&format!("Starting editor at {}", TODO_STATE_PATH.display()))?;
+            }
+            TodoSubcommand::Edit(_) => {
+                let autocompleter = crate::autocomplete::TextAutocompleter::new(
+                    |t| t.event.title.clone(),
+                    state.todo.todos.clone(),
+                );
+                let name = inquire::Text::new("Title")
+                    .with_help_message("Enter the title of the todo that you want to edit")
+                    .with_autocomplete(autocompleter.clone()).prompt()?;
+
+                let todo = match state.todo.todos.iter_mut().find(|e| e.event.title.contains(&name)) {
+                    Some(t) => t,
+                    None => anyhow::bail!("No Todo found")
+                };
+
+                todo.run_configurator()?;
             }
         }
 

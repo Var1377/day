@@ -4,12 +4,10 @@ use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 use enum_iterator::Sequence;
 
-use crate::weekly::Weekly;
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct SleepConfig {
     #[serde(default)]
-    pub schedule: Weekly<SleepSchedule>,
+    pub schedule: SleepSchedule,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]

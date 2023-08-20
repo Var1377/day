@@ -9,6 +9,7 @@ mod cli;
 mod fs;
 mod table;
 mod event;
+mod autocomplete;
 
 use clap::Parser;
 use human_panic::setup_panic;

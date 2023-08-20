@@ -8,3 +8,7 @@ pub mod state;
 pub mod weekly;
 pub mod scheduling;
 pub mod event;
+
+pub fn now() -> chrono::DateTime<chrono::Local> {
+    chrono::Local::now()
+}

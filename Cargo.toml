@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "day_cli",
-    "day_core"
+    "day_core",
+    "day_cloud"
 ]
 resolver = "2"

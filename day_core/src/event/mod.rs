@@ -14,16 +14,33 @@ pub enum RepetitionPattern {
 }
 
 #[serde_inline_default]
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Event {
     #[serde_inline_default("Task Title".into())]
-    pub name: String,
+    pub title: String,
     #[serde(default = "Uuid::now_v7")]
     pub id: Uuid,
     #[serde(default)]
     pub notes: String,
     #[serde_inline_default(HourMinute(0, 30))]
     pub duration: HourMinute,
+}
+
+impl Default for Event {
+    fn default() -> Self {
+        Self {
+            title: "Task Title".into(),
+            id: Uuid::now_v7(),
+            notes: "".into(),
+            duration: HourMinute(0, 30)
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+pub struct TimedEvent {
+    #[serde(default)]
+    pub inner: Event,
     #[serde(default)]
     pub timing: EventTiming,
 }

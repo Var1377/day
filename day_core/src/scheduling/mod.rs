@@ -1,23 +1,39 @@
-use crate::event::FixedTiming;
+mod solver;
 
+use chrono::{DateTime, Local};
+use crate::event::{Event, FixedTiming};
+
+#[derive(Debug, Clone, Default)]
 pub struct Schedule {
-    events: Vec<FixedTiming>,
+    pub events: Vec<ScheduleSlot>,
 }
 
-impl From<Vec<FixedTiming>> for Schedule {
-    fn from(mut events: Vec<FixedTiming>) -> Self {
-        events.sort();
-        Self {
-            events,
-        }
-    }
+#[derive(Debug, Clone)]
+pub struct ScheduleSlot {
+    pub event: Event,
+    pub timing: FixedTiming,
 }
 
-impl IntoIterator for Schedule {
-    type Item = FixedTiming;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+pub trait Module {
+    fn next_candidate(&mut self, schedule: &Schedule) -> Option<SlotCandidate>;
+}
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.events.into_iter()
-    }
+pub struct SlotCandidate {
+    event: Event,
+    timing: SlotCandidateTiming,
+}
+
+pub enum SlotCandidateTiming {
+    Fixed(FixedTiming),
+    FlexibleFixedDuration {
+        min_start: DateTime<Local>,
+        max_start: DateTime<Local>,
+        minutes: u32,
+    },
+    Flexible {
+        min_start: DateTime<Local>,
+        max_start: DateTime<Local>,
+        min_duration: u32,
+        max_duration: u32,
+    },
 }
