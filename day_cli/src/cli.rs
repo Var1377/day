@@ -3,6 +3,7 @@ use std::fmt::Display;
 use crate::{
     config::{ConfigCli, Configurable},
     state::{StateLoad, StateArgs}, modules::todo::TodoArgs,
+    modules::commitments::CommitmentCli,
 };
 use clap::{Parser, Subcommand};
 use day_core::{
@@ -37,6 +38,7 @@ impl Cli {
             SubCommand::Config(config_args) => config_args.run(self, &mut state)?,
             SubCommand::Todo(todo_args) => todo_args.run(self, &mut state)?,
             SubCommand::Data(data_args) => data_args.run(self, &mut state)?,
+            SubCommand::Commitments(commitment_args) => commitment_args.run(self, &mut state)?,
         };
 
         state.save()?;
@@ -46,16 +48,21 @@ impl Cli {
 
 #[derive(Subcommand, Debug)]
 enum SubCommand {
-    #[clap(visible_aliases = &["cfg", "c"])]
+    #[clap(visible_aliases = &["cfg"])]
     /// Show or change configuration values
     Config(ConfigCli),
-    #[clap(visible_aliases = &["t"])]
-    /// Manage your todo list
-    Todo(TodoArgs),
+
+    #[clap(visible_aliases = &["c"])]
+    /// Manage your commitments
+    Commitments(CommitmentCli),
 
     #[clap(visible_aliases = &["d"])]
     /// Show and edit all data stored by day
     Data(StateArgs),
+
+    #[clap(visible_aliases = &["t"])]
+    /// Manage your todo list
+    Todo(TodoArgs),
 }
 
 #[derive(Debug)]

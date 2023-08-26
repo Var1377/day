@@ -5,3 +5,4 @@ members = [
     "day_cloud"
 ]
 resolver = "2"
+default-run = "day_cli"
