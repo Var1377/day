@@ -8,7 +8,7 @@ pub struct ScheduleSolver<'a> {
 }
 
 impl<'a> ScheduleSolver<'a> {
-    pub fn solve(mut self, limit: DateTime<Local>) -> Schedule {
+    pub fn solve(mut self, _limit: DateTime<Local>) -> Schedule {
         let mut schedule = Schedule::default();
         loop {
             match self
@@ -25,10 +25,10 @@ impl<'a> ScheduleSolver<'a> {
                     }
                     SlotCandidateTiming::FlexibleFixedDuration {
                         min_start,
-                        max_start,
+                        max_start: _,
                         minutes,
                     } => {
-                        let mut timing = FixedTiming {
+                        let timing = FixedTiming {
                             start: min_start,
                             end: min_start + chrono::Duration::minutes(minutes as i64),
                         };
@@ -39,11 +39,11 @@ impl<'a> ScheduleSolver<'a> {
                     }
                     SlotCandidateTiming::Flexible {
                         min_start,
-                        max_start,
+                        max_start: _,
                         min_duration,
-                        max_duration,
+                        max_duration: _,
                     } => {
-                        let mut timing = FixedTiming {
+                        let timing = FixedTiming {
                             start: min_start,
                             end: min_start + chrono::Duration::minutes(min_duration as i64),
                         };

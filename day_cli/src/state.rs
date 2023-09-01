@@ -1,4 +1,5 @@
 use clap::{Args, Subcommand};
+use day_core::modules::commitments::CommitmentState;
 use day_core::{
     config::Config,
     state::State, modules::todos::TodoState,
@@ -6,6 +7,7 @@ use day_core::{
 
 use crate::cli::{Cli, Runnable};
 use crate::config::ConfigLoad;
+use crate::modules::commitments::CommitmentStateLoad;
 use crate::fs::DATA_DIR;
 use crate::modules::todo::TodoStateLoad;
 
@@ -13,13 +15,14 @@ use crate::modules::todo::TodoStateLoad;
 pub impl StateLoad for State {
     fn load() -> anyhow::Result<Self> where Self : Sized {
         Ok(
-            Self { config: Config::load()?, todo: TodoState::load()? }
+            Self { config: Config::load()?, todo: TodoState::load()?, commitments: CommitmentState::load()? }
         )
     }
 
     fn save(&mut self) -> anyhow::Result<()> {
         self.config.save()?;
         self.todo.save()?;
+        self.commitments.save()?;
         Ok(())
     }
 }

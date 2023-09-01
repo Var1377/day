@@ -44,7 +44,7 @@ impl Configurable for Task {
                             .clone()
                             .map(|e| e.get_date_time())
                             .flatten()
-                            .unwrap_or_default()
+                            .unwrap_or(now())
                             .into(),
                     )
                     .prompt()?;

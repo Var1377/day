@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local, Timelike, Utc};
+use chrono::{DateTime, Local, Timelike, Utc, NaiveTime};
 use serde::{Deserialize, Serialize};
 use sscanf::scanf;
 use std::fmt::Display;
@@ -198,3 +198,14 @@ impl Default for TimeOfDay {
     }
 }
 
+impl Into<NaiveTime> for TimeOfDay {
+    fn into(self) -> NaiveTime {
+        NaiveTime::from_hms_opt(self.0, self.1, 0).unwrap()
+    }
+}
+
+impl From<NaiveTime> for TimeOfDay {
+    fn from(t: NaiveTime) -> Self {
+        Self(t.hour(), t.minute())
+    }
+}

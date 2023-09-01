@@ -1,7 +1,8 @@
-mod solver;
+pub mod solver;
 
 use chrono::{DateTime, Local};
 use crate::event::{Event, FixedTiming};
+
 
 #[derive(Debug, Clone, Default)]
 pub struct Schedule {
@@ -19,8 +20,8 @@ pub trait Module {
 }
 
 pub struct SlotCandidate {
-    event: Event,
-    timing: SlotCandidateTiming,
+    pub event: Event,
+    pub timing: SlotCandidateTiming,
 }
 
 pub enum SlotCandidateTiming {

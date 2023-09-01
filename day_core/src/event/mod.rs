@@ -1,22 +1,32 @@
 mod flexible;
 mod inflexible;
+use enum_iterator::Sequence;
 pub use flexible::*;
 pub use inflexible::*;
 use uuid::Uuid;
 
 use crate::time::HourMinute;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, Copy, PartialEq, Eq, Sequence)]
 pub enum RepetitionPattern {
     #[default]
     Daily, 
     Weekly,
 }
 
+impl std::fmt::Display for RepetitionPattern {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            Self::Daily => "Daily",
+            Self::Weekly => "Weekly", 
+        })
+    }
+}
+
 #[serde_inline_default]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Event {
-    #[serde_inline_default("Task Title".into())]
+    #[serde_inline_default("Title".into())]
     pub title: String,
     #[serde(default = "Uuid::now_v7")]
     pub id: Uuid,
@@ -29,7 +39,7 @@ pub struct Event {
 impl Default for Event {
     fn default() -> Self {
         Self {
-            title: "Task Title".into(),
+            title: "Title".into(),
             id: Uuid::now_v7(),
             notes: "".into(),
             duration: HourMinute(0, 30)

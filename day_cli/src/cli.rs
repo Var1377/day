@@ -2,12 +2,15 @@ use std::fmt::Display;
 
 use crate::{
     config::{ConfigCli, Configurable},
-    state::{StateLoad, StateArgs}, modules::todo::TodoArgs,
     modules::commitments::CommitmentCli,
+    modules::todo::TodoArgs,
+    state::{StateArgs, StateLoad},
 };
+use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use clap::{Parser, Subcommand};
 use day_core::{
     state::State,
+    time::TimeOfDay,
     weekly::{Day, Weekly},
 };
 use enum_iterator::all;
@@ -66,14 +69,16 @@ enum SubCommand {
 }
 
 #[derive(Debug)]
-struct WeeklyDisplay<T : Display>(Day, T);
+struct WeeklyDisplay<T: Display>(Day, T);
 
-impl<T> Display for WeeklyDisplay<T> where T : Display {
+impl<T> Display for WeeklyDisplay<T>
+where
+    T: Display,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("{}: {}", self.0, self.1))
     }
 }
-
 
 impl<T> Configurable for Weekly<T>
 where
@@ -82,9 +87,14 @@ where
     fn run_configurator(&mut self) -> anyhow::Result<()> {
         let selection = inquire::MultiSelect::new(
             "Which days would you like to configure?",
-            all::<Day>().map(|day| WeeklyDisplay(day, self.get(day))).collect(),
+            all::<Day>()
+                .map(|day| WeeklyDisplay(day, self.get(day)))
+                .collect(),
         )
-        .prompt()?.into_iter().map(|day| day.0).collect::<Vec<_>>();
+        .prompt()?
+        .into_iter()
+        .map(|day| day.0)
+        .collect::<Vec<_>>();
 
         if let Some(day) = selection.first() {
             let day = *day;
@@ -114,6 +124,35 @@ where
             }
         };
 
+        Ok(())
+    }
+}
+
+// impl Configurable for DateTime<Local> {
+//     fn run_configurator(&mut self) -> anyhow::Result<()> {
+//         let date = inquire::DateSelect::new("Select a date").prompt()?;
+//         let time = inquire::CustomType::<TimeOfDay>::new("Select a time").prompt()?;
+
+//         *self = date.and_time(time.into()).and_local_timezone(Local).earliest().expect("Invalid datetime");
+//         Ok(())
+//     }
+// }
+
+#[extension_trait]
+pub impl DatetimeConfig for NaiveDateTime {
+    fn run_configurator(&mut self, msg: &str) -> Result<(), inquire::InquireError> {
+        let date = inquire::DateSelect::new(&format!("{msg} - Date")).with_default(self.date()).prompt()?;
+        let time = inquire::CustomType::<TimeOfDay>::new(&format!("{msg} - Time")).with_default(self.time().into()).prompt()?;
+        *self = chrono::NaiveDateTime::new(date, time.into());
+        Ok(())
+    }
+}
+
+impl DatetimeConfig for DateTime<Local> {
+    fn run_configurator(&mut self,msg: &str,) -> Result<(),inquire::InquireError> {
+        let mut naive: NaiveDateTime = self.naive_local();
+        naive.run_configurator(msg)?;
+        *self = naive.and_local_timezone(Local).earliest().expect("Invalid timezone conversion");
         Ok(())
     }
 }

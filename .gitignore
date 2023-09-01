@@ -1,8 +1,13 @@
 /target
 /config
 /data
+/vendor
 day_core/target
 
 day_cli/config
 day_cli/data
 day_cli/target
+
+day_cloud/config
+day_cloud/target
+
