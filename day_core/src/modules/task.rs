@@ -1,8 +1,8 @@
-use std::{fmt::Display, cmp::Ordering};
+use std::{cmp::Ordering, fmt::Display};
 
-use chrono::{NaiveDate, DateTime, Local};
+use chrono::{DateTime, Local, NaiveDate};
 
-use crate::event::Event;
+use crate::{event::EventDetails, time::HourMinute, now};
 
 #[serde_inline_default]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -12,7 +12,9 @@ pub struct Task {
     #[serde(default)]
     pub deadline: Option<Deadline>,
     #[serde(default, flatten)]
-    pub event: Event,
+    pub event: EventDetails,
+    #[serde_inline_default(HourMinute(0, 30))]
+    pub duration: HourMinute,
 }
 
 impl PartialOrd for Task {
@@ -23,7 +25,11 @@ impl PartialOrd for Task {
 
 impl Ord for Task {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.urgency.cmp(&other.urgency).reverse().then(deadline_cmp(&self.deadline, &other.deadline).reverse()).then(self.event.id.cmp(&other.event.id))
+        self.urgency
+            .cmp(&other.urgency)
+            .reverse()
+            .then(deadline_cmp(&self.deadline, &other.deadline).reverse())
+            .then(self.event.id.cmp(&other.event.id))
     }
 }
 
@@ -36,7 +42,7 @@ fn deadline_cmp(a: &Option<Deadline>, b: &Option<Deadline>) -> Ordering {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Ord)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Ord)]
 pub enum Deadline {
     Date(NaiveDate),
     DateTime(DateTime<Local>),
@@ -65,8 +71,16 @@ impl PartialOrd for Deadline {
         match (self, other) {
             (Deadline::Date(a), Deadline::Date(b)) => a.partial_cmp(b),
             (Deadline::DateTime(a), Deadline::DateTime(b)) => a.partial_cmp(b),
-            (Deadline::Date(a), Deadline::DateTime(b)) => a.and_hms_opt(0, 0, 0)?.and_local_timezone(Local).earliest()?.partial_cmp(b),
-            (Deadline::DateTime(a), Deadline::Date(b)) => a.partial_cmp(&b.and_hms_opt(0, 0, 0)?.and_local_timezone(Local).earliest()?),
+            (Deadline::Date(a), Deadline::DateTime(b)) => a
+                .and_hms_opt(0, 0, 0)?
+                .and_local_timezone(Local)
+                .earliest()?
+                .partial_cmp(b),
+            (Deadline::DateTime(a), Deadline::Date(b)) => a.partial_cmp(
+                &b.and_hms_opt(0, 0, 0)?
+                    .and_local_timezone(Local)
+                    .earliest()?,
+            ),
         }
     }
 }
@@ -81,9 +95,18 @@ impl Deadline {
 
     pub fn get_date_time(&self) -> Option<DateTime<Local>> {
         match self {
-            Deadline::Date(date) => date.and_hms_opt(0, 0, 0)?.and_local_timezone(Local).earliest(),
+            Deadline::Date(date) => date
+                .and_hms_opt(0, 0, 0)?
+                .and_local_timezone(Local)
+                .earliest(),
             Deadline::DateTime(date_time) => Some(*date_time),
         }
+    }
+}
+
+impl Default for Deadline {
+    fn default() -> Self {
+        Self::DateTime(now())
     }
 }
 
@@ -92,7 +115,8 @@ impl Default for Task {
         Self {
             deadline: None,
             urgency: 0,
-            event: Default::default()
+            event: Default::default(),
+            duration: HourMinute(0, 30),
         }
     }
 }
@@ -111,6 +135,9 @@ impl PartialOrd for CompletedTask {
 
 impl Ord for CompletedTask {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.completed_at.cmp(&other.completed_at).reverse().then(self.task.cmp(&other.task))
+        self.completed_at
+            .cmp(&other.completed_at)
+            .reverse()
+            .then(self.task.cmp(&other.task))
     }
 }

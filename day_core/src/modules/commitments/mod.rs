@@ -1,7 +1,7 @@
 mod state;
 pub use state::CommitmentState;
 
-use crate::event::{InflexibleEvent, FlexibleEvent, EventRepetition};
+use crate::event::{InflexibleEvent, FlexibleEvent, EventRepetition, EventDetails};
 use std::{fmt::Display, str::FromStr};
 use enum_iterator::Sequence;
 
@@ -15,6 +15,8 @@ pub enum Commitment {
 pub struct CustomEvent {
     #[serde(default, flatten)]
     pub inner: CustomEventInner,
+    #[serde(default, flatten)]
+    pub details: EventDetails,
     #[serde(default)]
     pub repetition: Option<EventRepetition>,
 }

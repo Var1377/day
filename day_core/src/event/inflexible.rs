@@ -1,13 +1,22 @@
-use chrono::{DateTime, Local};
-use crate::now;
 use super::RepetitionPattern;
+use crate::now;
+use chrono::{DateTime, Local};
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FixedTiming {
     #[serde(default = "now")]
     pub start: DateTime<Local>,
     #[serde(default = "now")]
     pub end: DateTime<Local>,
+}
+
+impl Default for FixedTiming {
+    fn default() -> Self {
+        Self {
+            start: now(),
+            end: now(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]

@@ -6,14 +6,15 @@ use crate::{
     modules::todo::TodoArgs,
     state::{StateArgs, StateLoad},
 };
-use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
+use chrono::{DateTime, Local, NaiveDateTime};
 use clap::{Parser, Subcommand};
 use day_core::{
     state::State,
-    time::TimeOfDay,
+    time::{HourMinute, TimeOfDay},
     weekly::{Day, Weekly},
 };
 use enum_iterator::all;
+use inquire::validator::{CustomTypeValidator, Validation};
 
 pub trait Runnable {
     type Args;
@@ -128,31 +129,145 @@ where
     }
 }
 
-// impl Configurable for DateTime<Local> {
-//     fn run_configurator(&mut self) -> anyhow::Result<()> {
-//         let date = inquire::DateSelect::new("Select a date").prompt()?;
-//         let time = inquire::CustomType::<TimeOfDay>::new("Select a time").prompt()?;
-
-//         *self = date.and_time(time.into()).and_local_timezone(Local).earliest().expect("Invalid datetime");
-//         Ok(())
-//     }
-// }
-
-#[extension_trait]
-pub impl DatetimeConfig for NaiveDateTime {
+pub trait CustomConfigurable {
+    type Options: Default;
     fn run_configurator(&mut self, msg: &str) -> Result<(), inquire::InquireError> {
-        let date = inquire::DateSelect::new(&format!("{msg} - Date")).with_default(self.date()).prompt()?;
-        let time = inquire::CustomType::<TimeOfDay>::new(&format!("{msg} - Time")).with_default(self.time().into()).prompt()?;
+        self.run_configurator_with_options(msg, Default::default())
+    }
+
+    fn run_configurator_with_options(
+        &mut self,
+        msg: &str,
+        options: Self::Options,
+    ) -> Result<(), inquire::InquireError>;
+}
+
+#[derive(Debug, Default)]
+pub struct DateTimeConfigOptions {
+    pub default: Option<NaiveDateTime>,
+    pub min: Option<NaiveDateTime>,
+    pub max: Option<NaiveDateTime>,
+}
+
+#[derive(Debug, Clone)]
+pub struct TimeOfDayMinValidator {
+    pub min: TimeOfDay,
+}
+
+impl CustomTypeValidator<TimeOfDay> for TimeOfDayMinValidator {
+    fn validate(&self, input: &TimeOfDay) -> Result<Validation, inquire::CustomUserError> {
+        if input < &self.min {
+            return Ok(Validation::Invalid("This time is below the minimum value".into()))
+        }
+
+        Ok(Validation::Valid)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TimeOfDayMaxValidator {
+    pub max: TimeOfDay,
+}
+
+impl CustomTypeValidator<TimeOfDay> for TimeOfDayMaxValidator {
+    fn validate(&self, input: &TimeOfDay) -> Result<Validation, inquire::CustomUserError> {
+        if input > &self.max {
+            return Ok(Validation::Invalid("This time is above the maximum value".into()))
+        }
+
+        Ok(Validation::Valid)
+    }
+}
+
+impl CustomConfigurable for NaiveDateTime {
+    type Options = DateTimeConfigOptions;
+    fn run_configurator_with_options(
+        &mut self,
+        msg: &str,
+        options: Self::Options,
+    ) -> Result<(), inquire::InquireError> {
+        let default = options.default.unwrap_or(*self);
+        let datepicker_message = format!("{msg} - Date");
+
+        let mut datepicker =
+            inquire::DateSelect::new(&datepicker_message).with_default(default.date());
+
+        if let Some(min) = options.min {
+            datepicker = datepicker.with_min_date(min.date());
+        }
+
+        if let Some(max) = options.max {
+            datepicker = datepicker.with_min_date(max.date());
+        }
+
+        let date = datepicker.prompt() ?;
+
+
+        let timepicker_message = format!("{msg} - Time");
+        let mut timepicker = inquire::CustomType::<TimeOfDay>::new(&timepicker_message)
+            .with_default(default.time().into());
+
+        if let Some(min) = options.min {
+            if date == min.date() {
+                let validator = TimeOfDayMinValidator {
+                    min: min.time().into()
+                };
+
+                timepicker = timepicker.with_validator(validator);
+            }
+        }
+
+        if let Some(max) = options.max {
+            if date == max.date() {
+                let validator = TimeOfDayMaxValidator {
+                    max: max.time().into()
+                };
+
+                timepicker = timepicker.with_validator(validator);
+            }
+        }
+
+        let time = timepicker.prompt()?;
         *self = chrono::NaiveDateTime::new(date, time.into());
         Ok(())
     }
 }
 
-impl DatetimeConfig for DateTime<Local> {
-    fn run_configurator(&mut self,msg: &str,) -> Result<(),inquire::InquireError> {
+impl CustomConfigurable for DateTime<Local> {
+    type Options = DateTimeConfigOptions;
+    fn run_configurator_with_options(
+        &mut self,
+        msg: &str,
+        options: Self::Options,
+    ) -> Result<(), inquire::InquireError> {
         let mut naive: NaiveDateTime = self.naive_local();
-        naive.run_configurator(msg)?;
-        *self = naive.and_local_timezone(Local).earliest().expect("Invalid timezone conversion");
+        naive.run_configurator_with_options(msg, options)?;
+        *self = naive
+            .and_local_timezone(Local)
+            .earliest()
+            .expect("Timezone conversion error");
         Ok(())
     }
 }
+
+macro_rules! time_config {
+    ($type:ty) => {
+        impl CustomConfigurable for $type {
+            type Options = ();
+
+            fn run_configurator_with_options(
+                &mut self,
+                msg: &str,
+                _options: Self::Options,
+            ) -> Result<(), inquire::InquireError> {
+                *self = inquire::CustomType::<Self>::new(msg)
+                    .with_default(*self)
+                    .prompt()?;
+                Ok(())
+            }
+        }
+    };
+}
+
+time_config!(HourMinute);
+time_config!(TimeOfDay);

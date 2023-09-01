@@ -1,5 +1,5 @@
 use clap::{Args, Subcommand};
-use day_core::{modules::commitments::Commitment, state::State};
+use day_core::{modules::commitments::{Commitment, CustomEvent}, state::State};
 
 use crate::{cli::{Cli, Runnable}, config::Configurable};
 
@@ -26,9 +26,10 @@ impl Runnable for CommitmentCli {
     fn run(&self, _args: &Self::Args, state: &mut State) -> anyhow::Result<()> {
         match &self.subcmd {
             CommitmentsSubcommand::Add => {
-                let mut commitment = Commitment::default();
+                let mut commitment = CustomEvent::default();
                 commitment.run_configurator()?;
-                state.commitments.commitments.push(commitment);
+                println!("\"{}\" saved!", commitment.details.title);
+                state.commitments.commitments.push(Commitment::Event(commitment));
             }
             CommitmentsSubcommand::Remove => {}
             CommitmentsSubcommand::List => {}

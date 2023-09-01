@@ -1,12 +1,12 @@
 use day_core::{
-    event::{Event, EventRepetition, FixedTiming, InflexibleEvent, RepetitionPattern, FlexibleEvent, Constraints},
+    event::{EventDetails, EventRepetition, FixedTiming, InflexibleEvent, RepetitionPattern, FlexibleEvent, Constraints},
     modules::commitments::{CustomEvent, CustomEventInner},
-    time::HourMinute, now,
+    now,
 };
 
 use crate::{
     config::Configurable,
-    table::TableFmt, cli::DatetimeConfig,
+    table::TableFmt, cli::{CustomConfigurable, DateTimeConfigOptions},
 };
 
 impl Configurable for InflexibleEvent {
@@ -52,6 +52,7 @@ impl Configurable for CustomEvent {
     fn run_configurator(&mut self) -> anyhow::Result<()> {
         
         self.inner.run_configurator()?;
+        self.details.run_configurator()?;
 
         if inquire::Confirm::new("Does this event repeat?")
             .with_default(self.repetition.is_some())
@@ -69,10 +70,11 @@ impl Configurable for CustomEvent {
 
 impl Configurable for FixedTiming {
     fn run_configurator(&mut self) -> anyhow::Result<()> {
-        println!("Start:");
         self.start.run_configurator("Start")?;
-        println!("End:");
-        self.end.run_configurator("End")?;
+        self.end.run_configurator_with_options("End", DateTimeConfigOptions {
+            min: Some(self.start.naive_local()),
+            ..Default::default()
+        })?;
         Ok(())
     }
 }
@@ -100,7 +102,7 @@ impl Configurable for RepetitionPattern {
     }
 }
 
-impl Configurable for Event {
+impl Configurable for EventDetails {
     fn run_configurator(&mut self) -> anyhow::Result<()> {
         self.title = inquire::Text::new("Name:")
             .with_default(&self.title)
@@ -114,25 +116,19 @@ impl Configurable for Event {
 
         self.notes = desc.prompt()?;
 
-        self.duration = inquire::CustomType::<HourMinute>::new("Estimated Duration: ")
-            .with_default(self.duration)
-            .prompt()?
-            .into();
-
         Ok(())
     }
 }
 
-impl TableFmt for Event {
+impl TableFmt for EventDetails {
     fn headers() -> Vec<&'static str> {
         ["Name", "Notes", "Duration"].into()
     }
 
     fn row(self) -> comfy_table::Row {
         vec![
-            self.title.into(),
-            self.notes.into(),
-            self.duration.to_cell_duration(),
+            self.title,
+            self.notes,
         ]
         .into()
     }
