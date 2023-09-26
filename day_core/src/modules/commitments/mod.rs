@@ -5,14 +5,8 @@ use crate::event::{InflexibleEvent, FlexibleEvent, EventRepetition, EventDetails
 use std::{fmt::Display, str::FromStr};
 use enum_iterator::Sequence;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum Commitment {
-    Event(CustomEvent),
-    Ical(String),
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct CustomEvent {
+pub struct Commitment {
     #[serde(default, flatten)]
     pub inner: CustomEventInner,
     #[serde(default, flatten)]
@@ -57,15 +51,6 @@ impl Display for CommitmentType {
     }
 }
 
-impl From<CommitmentType> for Commitment {
-    fn from(commitment_type: CommitmentType) -> Self {
-        match commitment_type {
-            CommitmentType::Ical => Commitment::Ical(String::default()),
-            CommitmentType::Event => Commitment::Event(Default::default()),
-        }
-    }
-}
-
 impl FromStr for CommitmentType {
     type Err = ();
 
@@ -75,11 +60,5 @@ impl FromStr for CommitmentType {
             "Custom Event" => Ok(CommitmentType::Event),
             _ => Err(()),
         }
-    }
-}
-
-impl Default for Commitment {
-    fn default() -> Self {
-        Self::Event(Default::default())
     }
 }

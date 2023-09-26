@@ -1,6 +1,6 @@
 use day_core::{
     event::{EventDetails, EventRepetition, FixedTiming, InflexibleEvent, RepetitionPattern, FlexibleEvent, Constraints},
-    modules::commitments::{CustomEvent, CustomEventInner},
+    modules::commitments::{Commitment, CustomEventInner},
     now,
 };
 
@@ -48,7 +48,7 @@ impl Configurable for CustomEventInner {
     }
 }
 
-impl Configurable for CustomEvent {
+impl Configurable for Commitment {
     fn run_configurator(&mut self) -> anyhow::Result<()> {
         
         self.inner.run_configurator()?;
@@ -70,9 +70,13 @@ impl Configurable for CustomEvent {
 
 impl Configurable for FixedTiming {
     fn run_configurator(&mut self) -> anyhow::Result<()> {
-        self.start.run_configurator("Start")?;
+        self.start.run_configurator_with_options("Start", DateTimeConfigOptions {
+            default: Some(now().naive_local()),
+            ..Default::default()
+        })?;
         self.end.run_configurator_with_options("End", DateTimeConfigOptions {
             min: Some(self.start.naive_local()),
+            default: Some(self.start.naive_local() + chrono::Duration::hours(1)),
             ..Default::default()
         })?;
         Ok(())
@@ -122,7 +126,7 @@ impl Configurable for EventDetails {
 
 impl TableFmt for EventDetails {
     fn headers() -> Vec<&'static str> {
-        ["Name", "Notes", "Duration"].into()
+        ["Name", "Notes"].into()
     }
 
     fn row(self) -> comfy_table::Row {

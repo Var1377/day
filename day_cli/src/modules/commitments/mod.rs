@@ -5,25 +5,99 @@ use std::path::PathBuf;
 pub use cli::CommitmentCli;
 use once_cell::sync::Lazy;
 
-use crate::{config::Configurable, fs::DATA_DIR};
-use day_core::modules::commitments::{Commitment, CommitmentState, CommitmentType};
-use enum_iterator::all;
+use crate::{fs::DATA_DIR, table::TableFmt};
+use day_core::{
+    event::{EventDetails, EventRepetition, FixedTiming, InflexibleEvent},
+    modules::commitments::{Commitment, CommitmentState, CustomEventInner},
+};
 
+impl TableFmt for Commitment {
+    fn headers() -> Vec<&'static str> {
+        let mut headers = vec![];
 
-impl Configurable for Commitment {
-    fn run_configurator(&mut self) -> anyhow::Result<()> {
-        *self =
-            inquire::Select::<CommitmentType>::new("What sort of event is this?", all().collect())
-                .prompt()?
-                .into();
+        headers.extend(EventDetails::headers());
+        headers.extend(CustomEventInner::headers());
+        headers.push("Repeats");
+        headers.extend(EventRepetition::headers());
 
-        match self {
-            Commitment::Event(event) => event.run_configurator(),
-            Commitment::Ical(ical) => {
-                *ical = inquire::Text::new("What is the url of the ical calendar?").prompt()?;
-                Ok(())
-            }
+        headers
+    }
+
+    fn row(self) -> comfy_table::Row {
+        let mut row = comfy_table::Row::new();
+
+        for cell in self.details.row().cell_iter().cloned() {
+            row.add_cell(cell);
         }
+
+        for cell in self.inner.row().cell_iter().cloned() {
+            row.add_cell(cell);
+        }
+
+        row.add_cell(self.repetition.is_some().into());
+        self.repetition
+            .map(|r| r.row())
+            .unwrap_or_default()
+            .cell_iter()
+            .for_each(|c| {
+                row.add_cell(c.clone());
+            });
+
+        row
+    }
+}
+
+impl TableFmt for CustomEventInner {
+    fn headers() -> Vec<&'static str> {
+        InflexibleEvent::headers()
+    }
+
+    fn row(self) -> comfy_table::Row {
+        match self {
+            CustomEventInner::Inflexible(t) => t.row(),
+            CustomEventInner::Flexible(_) => unimplemented!(),
+        }
+    }
+}
+
+impl TableFmt for InflexibleEvent {
+    fn headers() -> Vec<&'static str> {
+        FixedTiming::headers()
+    }
+
+    fn row(self) -> comfy_table::Row {
+        self.timing.row()
+    }
+}
+
+impl TableFmt for FixedTiming {
+    fn headers() -> Vec<&'static str> {
+        ["Start", "End"].into()
+    }
+
+    fn row(self) -> comfy_table::Row {
+        [
+            self.start.format("%Y-%m-%d %H:%M"),
+            self.end.format("%Y-%m-%d %H:%M"),
+        ]
+        .into()
+    }
+}
+
+impl TableFmt for EventRepetition {
+    fn headers() -> Vec<&'static str> {
+        ["Repitition End", "Interval", "Pattern"].into()
+    }
+
+    fn row(self) -> comfy_table::Row {
+        [
+            self.repeat_end
+                .map(|dt| dt.format("%Y-%m-%d %H:%M").to_string())
+                .unwrap_or_default(),
+            self.interval.to_string(),
+            self.pattern.to_string(),
+        ]
+        .into()
     }
 }
 

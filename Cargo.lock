@@ -499,6 +499,7 @@ version = "0.1.0"
 dependencies = [
  "argon2",
  "axum",
+ "icalendar",
 ]
 
 [[package]]
@@ -686,8 +687,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be4136b2a15dd319360be1c07d9933517ccf0be8f16bf62a3bee4f0d618df427"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "wasi 0.11.0+wasi-snapshot-preview1",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -811,6 +814,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "icalendar"
+version = "0.15.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "753f71e82c28fb469f0d813019eea1caaf4e8064b1e3822556f5b6278c2869a4"
+dependencies = [
+ "chrono",
+ "iso8601",
+ "nom",
+ "uuid",
+]
+
+[[package]]
 name = "indexmap"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -881,6 +896,15 @@ dependencies = [
  "hermit-abi",
  "rustix 0.38.4",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "iso8601"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "924e5d73ea28f59011fec52a0d12185d496a9b075d360657aed2a5707f701153"
+dependencies = [
+ "nom",
 ]
 
 [[package]]
@@ -1746,6 +1770,7 @@ dependencies = [
  "atomic",
  "getrandom",
  "serde",
+ "wasm-bindgen",
 ]
 
 [[package]]

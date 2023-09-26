@@ -1,3 +1,4 @@
+use anyhow::Ok;
 use clap::{Args, Subcommand};
 
 use crate::{
@@ -76,6 +77,9 @@ impl Runnable for ConfigCli {
     }
 }
 
+
+
+
 #[extension_trait]
 pub impl ConfigLoad for Config {
     fn load() -> anyhow::Result<Self>
@@ -105,13 +109,7 @@ pub impl ConfigLoad for Config {
                         false => (),
                     };
                     config.save()?;
-                    match inquire::Confirm::new("Would you like to continue with your command?")
-                        .with_default(true)
-                        .prompt()?
-                    {
-                        true => Ok(config),
-                        false => Err(anyhow::anyhow!("Execution cancelled")),
-                    }
+                    Ok(config)
                 } else {
                     Err(anyhow::anyhow!("No configuration file found"))
                 }

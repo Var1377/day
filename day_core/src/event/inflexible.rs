@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use super::RepetitionPattern;
 use crate::now;
 use chrono::{DateTime, Local};
@@ -40,10 +42,23 @@ impl std::fmt::Display for InflexibleEvent {
 #[derive(Debug)]
 pub struct InflexibleEventIterator(Option<InflexibleEvent>);
 
-#[derive(Debug, Clone, Serialize, Deserialize, Copy, PartialEq, Eq, Default)]
+#[serde_inline_default]
+#[derive(Debug, Clone, Serialize, Deserialize, Copy, PartialEq, Eq)]
 pub struct EventRepetition {
     #[serde(default)]
     pub repeat_end: Option<DateTime<Local>>,
+    #[serde_inline_default(NonZeroU32::new(1).unwrap())]
+    pub interval: NonZeroU32,
     #[serde(default)]
     pub pattern: RepetitionPattern,
+}
+
+impl Default for EventRepetition {
+    fn default() -> Self {
+        Self {
+            repeat_end: None,
+            interval: NonZeroU32::new(1).unwrap(),
+            pattern: Default::default()
+        }
+    }
 }
