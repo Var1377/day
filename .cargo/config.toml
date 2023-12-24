@@ -4,9 +4,3 @@ DAY_DATA_DIR = "./data/"
 
 [target.'cfg(all())']
 rustflags = ["--cfg", "uuid_unstable"]
-
-[source.crates-io]
-replace-with = "vendored-sources"
-
-[source.vendored-sources]
-directory = "./vendor"

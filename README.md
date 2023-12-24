@@ -47,11 +47,13 @@ Each custom slice is made up of a set of parameters, and crucially, a set of chi
 | `preferred` | `int` | The preferred number of units to schedule this slice for | `min` |
 | `max` | `int` | The maximum number of units to schedule this slice for | `max(min, preferred)` |
 
-#### Default Subslice Length
+#### Default Length
 
-| `defaultSubsliceMinMins` | `int` | Minimum minutes per opaque subslice | `10` for Root Slices<br>Same as parent otherwise |
-| `defaultSubslicePreferredMins` | `int` | Preferred minutes per opaque subslice | `30` for Root Slices<br>Same as parent otherwise |
-| `defaultSubsliceMaxMins` | `int` | Maximum minutes per opaque subslice | `60` for Root Slices<br>Same as parent otherwise |
+| Name | Type | Description | Default |
+| ---- | ---- | ----------- | ------- |
+| `defaultSubsliceMinMins` | `int` | Minimum minutes when not delegating to a subslice | `10` for Root Slices<br>Same as parent otherwise |
+| `defaultSubslicePreferredMins` | `int` | Preferred minutes when not delegating to a subslice | `30` for Root Slices<br>Same as parent otherwise |
+| `defaultSubsliceMaxMins` | `int` | Maximum minutes when not delegating to a subslice | `60` for Root Slices<br>Same as parent otherwise |
 
 #### Self-triggers (Root Slices only)
 
