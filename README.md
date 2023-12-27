@@ -8,13 +8,14 @@ Automatically managing and scheduling tasks and sleep around your everyday commi
 
 ## Crates
 There are two crates in this repo:
-- `day_core` contains all the types and scheduling logic and is partitioned into a separate crate to allow for non-cli interfaces in the future.
+- `day_core` contains all the types and scheduling logic
 - `day_cli` contains all the cli logic, including the storage of state and configuration files
 
 ## Installation
 `cargo install day_cli`
 
-
+## Usage
+`day --help`
 
 # Slices
 The true power of day comes with it's module system, allowing you to systematically model a graph like structure defining how you might want to spend your time.
@@ -34,9 +35,8 @@ Each custom slice is made up of a set of parameters, and crucially, a set of chi
 
 | Name | Type | Description | Default |
 | ---- | ---- | ----------- | ------- |
-| `name` | `string` | Name | N/A |
-| `description` | `string` | Description | N/A |
-| `noEligibleSubsliceBehaviour` | `error \| opaque` | What to do if there are no eligible subslices to schedule.<br>`error` stops the slice being scheduled.<br>`opaque` directly schedules the slice without specifying a subslice | `opaque` |
+| `name` | `string` | The name of the slice | N/A |
+| `id` | `string` | A unique identifier | `name` |
 
 #### Slice Length
 
@@ -45,38 +45,33 @@ Each custom slice is made up of a set of parameters, and crucially, a set of chi
 | `unit` | `minutes \| subslices` | The unit of time to schedule this slice for | `subslices` |
 | `min` | `int` | The minimum number of units to schedule this slice for | `1` |
 | `preferred` | `int` | The preferred number of units to schedule this slice for | `min` |
-| `max` | `int` | The maximum number of units to schedule this slice for | `max(min, preferred)` |
+| `max` | `int \| null` | The maximum number of units to schedule this slice for | `null` |
 
 #### Default Length
 
 | Name | Type | Description | Default |
 | ---- | ---- | ----------- | ------- |
-| `defaultSubsliceMinMins` | `int` | Minimum minutes when not delegating to a subslice | `10` for Root Slices<br>Same as parent otherwise |
-| `defaultSubslicePreferredMins` | `int` | Preferred minutes when not delegating to a subslice | `30` for Root Slices<br>Same as parent otherwise |
-| `defaultSubsliceMaxMins` | `int` | Maximum minutes when not delegating to a subslice | `60` for Root Slices<br>Same as parent otherwise |
+| `defaultSubsliceMinMins` | `int` | Minimum minutes when not delegating to a subslice | `20` for Root Slices<br>Same as parent otherwise |
+| `defaultSubslicePreferredMins` | `int` | Preferred minutes when not delegating to a subslice | `40` for Root Slices<br>Same as parent otherwise |
+| `defaultSubsliceMaxMins` | `int \| null` | Maximum minutes when not delegating to a subslice | `null` for Root Slices<br>Same as parent otherwise |
 
 #### Self-triggers (Root Slices only)
 
 | Name | Type | Description | Default |
 | ---- | ---- | ----------- | ------- |
-| `autoschedule` | `AutoSchedule | null` | Whether to autoschedule this slice. If `null`, this slice can only be scheduled manually or with a trigger. | `null` |
-
-##### `AutoSchedule`
-
-| Name | Type | Description | Default |
-| ---- | ---- | ----------- | ------- |
-| `length` | `int` | The number of units you want completed per `timePeriod` | `1` |
-| `lengthUnit` | `minutes \| subslices \| slices` | The unit of time for `length` | `slices` |
-| `timePeriod` | `int` | The time period in which to complete `length` amount of this slice | `1` |
-| `timePeriodUnit` | `day \| proportion` | The unit for `timePeriod` | `proportion` |
-| `contextBehaviour` | `contextFree \| average \| onlyUp \| onlyDown` | How to correct for more or less time being spent on a slice in the past  | `contextFree` |
-| `maxPerDay` | `int \| null` | The maximum number of times this slice can be autoscheduled in a day | `null` |
-| `maxPerWeek` | `int \| null` | The maximum number of times this slice can be autoscheduled in a week | `null` |
+| `autoscheduleUnit` | `minutes \| subslices \| slices` | The unit of time for `length` | `subslices` |
+| `minPerDay` | `int` | The minimum number of `autoscheduleUnit`s this slice can be autoscheduled in a day | `0` |
+| `preferredPerDay` | `int` | The preferred number of `autoscheduleUnit`s this slice can be scheduled in a day | `minPerDay` |
+| `maxPerDay` | `int \| null` | The maximum number of `autoscheduleUnit`s this slice can be scheduled in a day (unless manually scheduled) | `null` |
+| `minPerWeek` | `int` | The minimum number of `autoscheduleUnit`s this slice can be autoscheduled in a week | `0` |
+| `preferredPerWeek` | `int` | The preferred number of `autoscheduleUnit`s this slice can be scheduled in a week | `minPerWeek` |
+| `maxPerWeek` | `int \| null` | The maximum number of `autoscheduleUnit`s this slice can be scheduled in a week (unless manually scheduled) | `null` |
+| `shareOfFreeTime` | `int` | `shareOfFreeTime / sum(slices shareOfFreeTime for all root slices)` is the proportion of otherwise unoccupied time taken up by this | `0` |
 
 #### Self-triggers (Child Slices only)
 | Name | Type | Description | Default |
 | ---- | ---- | ----------- | ------- |
-| `parentCanSchedule` | `bool` | Whether the parent slice can schedule this slice | `true` |
+| `parentProportion` | `int` | `parentProportion / (parentProportion + sum of sibling parentProportions)` is the proportion of the parent's slices time or sessions (depending on the parent's `subsliceSelectionBehaviour`) dedicated to that slice | `1` |
 
 #### Triggers
 
@@ -91,9 +86,11 @@ Each custom slice is made up of a set of parameters, and crucially, a set of chi
 | Name | Type | Description | Default |
 | ---- | ---- | ----------- | ------- |
 | `children` | `Slice[]` | The subslices of this slice | `[]` |
-| `subsliceSelectionBehaviour` | `roundRobin \| equalSlices \| equalTime \| random` | How to select subslices to schedule | `equalSlices` |
+| `errorOnNoEligibleSubslice` | `bool` | Whether to throw an error if there are no eligible subslices to schedule | `false` |
+| `subsliceSelectionBehaviour` | `roundRobin \| equalTime` | How to select subslices to schedule | `roundRobin` |
 
-#### Tasks
+
+<!-- #### Tasks
 
 | Name | Type | Description | Default |
 | ---- | ---- | ----------- | ------- |
@@ -110,7 +107,7 @@ Each custom slice is made up of a set of parameters, and crucially, a set of chi
 | `deadline` | `DateTime \| null` | Deadline. | `null` |
 | `subtasks` | `Task[]` | Subtasks | `[]` |
 | `subtaskSelectionBehaviour` | `inOrder \| firstFit \| random` | How to select subtasks to schedule | `inOrder` |
-| `defaultSubtaskTime` | `int` | Default time to spend on each subtask | `totalTime / subtasks.length` |
+| `defaultSubtaskTime` | `int` | Default time to spend on each subtask | `totalTime / subtasks.length` | -->
 
 # Example
 
