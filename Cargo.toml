@@ -2,6 +2,8 @@
 members = [
     "day_cli",
     "day_core",
-    "day_cloud"
+]
+default-members = [
+    "day_cli",
 ]
 resolver = "2"

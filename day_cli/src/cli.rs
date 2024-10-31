@@ -1,13 +1,6 @@
 use std::fmt::Display;
-
-use crate::{
-    config::{ConfigCli, Configurable},
-    modules::commitments::CommitmentCli,
-    modules::todo::TodoArgs,
-    state::{StateArgs, StateLoad},
-};
 use chrono::{DateTime, Local, NaiveDateTime};
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use day_core::{
     state::State,
     time::{HourMinute, TimeOfDay},
@@ -15,6 +8,7 @@ use day_core::{
 };
 use enum_iterator::all;
 use inquire::validator::{CustomTypeValidator, Validation};
+use crate::Configurable;
 
 pub trait Runnable {
     type Args;
@@ -27,46 +21,20 @@ pub trait Runnable {
     version = "0.1.0",
     author = "Varun Latthe (Var1337)",
     about,
-    after_help = "Day.rs is a command line tool to help you maximise efficiency around your schedule. To see what it can do, run \"day config\""
+    after_help = "Day.rs is a command line tool to help you maximise efficiency around your schedule. To see what it can do, check out [TODO: webpage link]"
 )]
 pub struct Cli {
     #[clap(subcommand)]
-    subcmd: SubCommand,
+    subcmd: crate::subcommands::SubCommand,
 }
 
-impl Cli {
-    pub fn run(&self) -> anyhow::Result<()> {
-        let mut state = State::load()?;
+impl Runnable for Cli {
+    type Args = ();
 
-        match &self.subcmd {
-            SubCommand::Config(config_args) => config_args.run(self, &mut state)?,
-            SubCommand::Todo(todo_args) => todo_args.run(self, &mut state)?,
-            SubCommand::Data(data_args) => data_args.run(self, &mut state)?,
-            SubCommand::Commitments(commitment_args) => commitment_args.run(self, &mut state)?,
-        };
-
-        state.save()?;
+    fn run(&self, _: &Self::Args, state: &mut State) -> anyhow::Result<()> {
+        self.subcmd.run(&self, state)?;
         Ok(())
     }
-}
-
-#[derive(Subcommand, Debug)]
-enum SubCommand {
-    #[clap(visible_aliases = &["cfg"])]
-    /// Show or change configuration values
-    Config(ConfigCli),
-
-    #[clap(visible_aliases = &["c"])]
-    /// Manage your commitments
-    Commitments(CommitmentCli),
-
-    #[clap(visible_aliases = &["d"])]
-    /// Show and edit all data stored by day
-    Data(StateArgs),
-
-    #[clap(visible_aliases = &["t"])]
-    /// Manage your todo list
-    Todo(TodoArgs),
 }
 
 #[derive(Debug)]

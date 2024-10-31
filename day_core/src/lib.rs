@@ -1,14 +1,12 @@
-#[macro_use] extern crate serde;
-#[macro_use] extern crate serde_inline_default;
-
 pub mod time;
-pub mod modules;
-pub mod config;
 pub mod state;
 pub mod weekly;
-pub mod scheduling;
-pub mod event;
+pub mod config;
+pub mod error;
+pub mod maybe_set;
 
-pub fn now() -> chrono::DateTime<chrono::Local> {
-    chrono::Local::now()
-}
+pub use error::Error;
+
+#[macro_use]
+extern crate serde;
+extern crate serde_inline_default;

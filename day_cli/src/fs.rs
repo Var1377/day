@@ -71,3 +71,48 @@ where
         Ok(())
     }
 }
+
+use day_core::{
+    config::Config,
+    state::State,
+};
+
+#[extension_trait]
+pub impl LoadAndSave for State {
+    fn load() -> anyhow::Result<Self> where Self : Sized {
+        let config = Config::load()?;
+        let slices = config
+            .slices
+            .iter()
+            .cloned()
+            .filter(|slice| slice.enabled())
+            .map(|slice| slice.to_root_slice())
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(State {
+            config,
+            slices,
+        })
+    }
+
+    fn save(&self) -> anyhow::Result<()> {
+        self.config.save()?;
+        Ok(())
+    }
+}
+
+impl LoadAndSave for Config {
+    fn load() -> anyhow::Result<Self> where Self : Sized {
+        if let Some(contents) = file_contents(&CONFIG_PATH)? {
+            serde_json::from_str(&contents).map_err(Into::into)
+        } else {
+            let config = Self::default();
+            Ok(config)
+        }
+    }
+
+    fn save(&self) -> anyhow::Result<()> {
+        std::fs::write(&*CONFIG_PATH, serde_json::to_string_pretty(self)?)?;
+        Ok(())
+    }
+}
